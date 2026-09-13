@@ -108,10 +108,12 @@ public class ResolveIntentNode {
             case "calculator_query" -> {
                 // Extract math expression from patterns like:
                 // "calculate 5 + 3", "compute 100 / 4", "what is 2 * 7"
-                Pattern exprPattern = Pattern.compile("(\\d+\\.?\\d*\\s*[+\\-*/]\\s*\\d+\\.?\\d*)");
-                Matcher m = exprPattern.matcher(userRequest);
-                if (m.find()) {
-                    params.put("expression", m.group(1).trim());
+                String expression = userRequest.replaceFirst(
+                        "(?i)^\\s*(?:calculate|compute|math|what\\s+is)\\s*", "").trim();
+                if (!expression.isEmpty() && expression.matches("[0-9eE+\\-*/().\\s]+")) {
+                    params.put("expression", expression);
+                } else {
+                    throw new IllegalArgumentException("Invalid arithmetic expression");
                 }
             }
         }

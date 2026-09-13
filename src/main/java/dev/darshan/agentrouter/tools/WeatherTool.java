@@ -1,5 +1,6 @@
 package dev.darshan.agentrouter.tools;
 
+import dev.darshan.agentrouter.monitoring.Clock;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -10,6 +11,15 @@ import java.util.*;
  */
 @Component
 public class WeatherTool implements Tool {
+    private final Clock clock;
+
+    public WeatherTool() {
+        this(Clock.system());
+    }
+
+    public WeatherTool(Clock clock) {
+        this.clock = clock;
+    }
 
     private static final Map<String, Map<String, Object>> WEATHER_DATA = Map.of(
         "SF",  Map.of("temp", 65, "forecast", "foggy",  "location", "San Francisco, CA"),
@@ -51,14 +61,14 @@ public class WeatherTool implements Tool {
 
     @Override
     public ToolResult execute(Map<String, Object> params) {
-        long start = System.currentTimeMillis();
+        long start = clock.monotonicNanos();
         String location = ((String) params.get("location")).toUpperCase();
 
         // Simulate network latency (20-80ms)
         simulateLatency();
 
         Map<String, Object> data = WEATHER_DATA.get(location);
-        long elapsed = System.currentTimeMillis() - start;
+        long elapsed = clock.elapsedMillis(start);
 
         if (data == null) {
             return ToolResult.failure("Unknown location: " + location, elapsed);

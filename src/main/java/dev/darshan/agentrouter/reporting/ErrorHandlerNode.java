@@ -44,8 +44,11 @@ public class ErrorHandlerNode {
         log.error("ErrorHandler: {} for tool '{}' — {}",
                 errorType, toolName, context.getErrorMessage());
 
-        // Record error metrics
-        metricsCollector.recordError(toolName, errorType);
+        // Validation and routing failures have no tool attempt to count. Tool
+        // execution paths already record exactly one attempt before branching.
+        if (!context.isAttemptRecorded()) {
+            metricsCollector.recordError(toolName, errorType);
+        }
         context.getMetrics().setErrorType(errorType);
 
         if (context.getMetrics().getToolName() == null) {

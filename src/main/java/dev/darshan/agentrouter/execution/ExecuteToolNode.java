@@ -2,6 +2,7 @@ package dev.darshan.agentrouter.execution;
 
 import dev.darshan.agentrouter.core.ExecutionContext;
 import dev.darshan.agentrouter.monitoring.MetricsCollector;
+import dev.darshan.agentrouter.monitoring.Clock;
 import dev.darshan.agentrouter.routing.CircuitBreaker;
 import dev.darshan.agentrouter.tools.ToolResult;
 import org.slf4j.Logger;
@@ -24,10 +25,17 @@ public class ExecuteToolNode {
 
     private final CircuitBreaker circuitBreaker;
     private final MetricsCollector metricsCollector;
+    private final Clock clock;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public ExecuteToolNode(CircuitBreaker circuitBreaker, MetricsCollector metricsCollector) {
+        this(circuitBreaker, metricsCollector, Clock.system());
+    }
+
+    public ExecuteToolNode(CircuitBreaker circuitBreaker, MetricsCollector metricsCollector, Clock clock) {
         this.circuitBreaker = circuitBreaker;
         this.metricsCollector = metricsCollector;
+        this.clock = clock;
     }
 
     /**
@@ -37,39 +45,43 @@ public class ExecuteToolNode {
         String toolName = context.getSelectedTool().getName();
         log.info("ExecuteTool: executing '{}' with params {}", toolName, context.getToolInput());
 
-        long startTime = System.currentTimeMillis();
+        long startTime = clock.monotonicNanos();
 
         try {
             ToolResult result = circuitBreaker.execute(
                     context.getSelectedTool(), context.getToolInput());
 
-            long elapsed = System.currentTimeMillis() - startTime;
-            metricsCollector.recordLatency(toolName, elapsed);
+            long elapsed = clock.elapsedMillis(startTime);
             context.getMetrics().setLatencyMs(elapsed);
 
             if (result.isSuccess()) {
+                metricsCollector.recordAttempt(toolName, "SUCCESS", elapsed);
+                context.markAttemptRecorded();
                 log.info("ExecuteTool: '{}' completed successfully in {}ms", toolName, elapsed);
                 return context.withResult(result);
             } else {
                 log.warn("ExecuteTool: '{}' returned failure: {}", toolName, result.getErrorMessage());
-                metricsCollector.recordError(toolName, "ToolFailure");
+                metricsCollector.recordAttempt(toolName, "FAILURE", elapsed);
+                context.markAttemptRecorded();
                 return context.withError(
                         new ToolExecutionException("Tool execution failed: " + result.getErrorMessage()));
             }
 
         } catch (CircuitBreaker.CircuitBreakerOpenException e) {
-            long elapsed = System.currentTimeMillis() - startTime;
+            long elapsed = clock.elapsedMillis(startTime);
             log.error("ExecuteTool: circuit breaker OPEN for '{}'", toolName);
-            metricsCollector.recordError(toolName, "CircuitBreakerOpen");
+            // Rejection is not an attempt: no call/error recorded, separate counter.
+            metricsCollector.recordRejection(toolName);
+            context.markAttemptRecorded();
             context.getMetrics().setLatencyMs(elapsed);
             context.getMetrics().setErrorType("CircuitBreakerOpen");
             return context.withError(e);
 
         } catch (Exception e) {
-            long elapsed = System.currentTimeMillis() - startTime;
+            long elapsed = clock.elapsedMillis(startTime);
             log.error("ExecuteTool: unexpected error executing '{}': {}", toolName, e.getMessage());
-            metricsCollector.recordLatency(toolName, elapsed);
-            metricsCollector.recordError(toolName, e.getClass().getSimpleName());
+            metricsCollector.recordAttempt(toolName, "FAILURE", elapsed);
+            context.markAttemptRecorded();
             context.getMetrics().setLatencyMs(elapsed);
             context.getMetrics().setErrorType(e.getClass().getSimpleName());
             return context.withError(new ToolExecutionException(

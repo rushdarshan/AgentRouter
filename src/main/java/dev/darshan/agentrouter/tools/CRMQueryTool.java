@@ -1,5 +1,6 @@
 package dev.darshan.agentrouter.tools;
 
+import dev.darshan.agentrouter.monitoring.Clock;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -10,6 +11,15 @@ import java.util.*;
  */
 @Component
 public class CRMQueryTool implements Tool {
+    private final Clock clock;
+
+    public CRMQueryTool() {
+        this(Clock.system());
+    }
+
+    public CRMQueryTool(Clock clock) {
+        this.clock = clock;
+    }
 
     private static final Map<String, Map<String, Object>> CUSTOMER_DB = new HashMap<>();
 
@@ -65,14 +75,14 @@ public class CRMQueryTool implements Tool {
 
     @Override
     public ToolResult execute(Map<String, Object> params) {
-        long start = System.currentTimeMillis();
+        long start = clock.monotonicNanos();
         String customerId = ((String) params.get("customerId")).toUpperCase();
 
         // Simulate database query latency (30-120ms)
         simulateLatency();
 
         Map<String, Object> customer = CUSTOMER_DB.get(customerId);
-        long elapsed = System.currentTimeMillis() - start;
+        long elapsed = clock.elapsedMillis(start);
 
         if (customer == null) {
             return ToolResult.failure("Customer not found: " + customerId, elapsed);

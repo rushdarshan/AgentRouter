@@ -2,6 +2,7 @@ package dev.darshan.agentrouter.api;
 
 import dev.darshan.agentrouter.monitoring.MetricsCollector;
 import dev.darshan.agentrouter.monitoring.ToolMetrics;
+import dev.darshan.agentrouter.job.SqliteJobStore;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,9 +22,16 @@ import java.util.Map;
 public class HealthController {
 
     private final MetricsCollector metricsCollector;
+    private final SqliteJobStore jobStore;
 
     public HealthController(MetricsCollector metricsCollector) {
+        this(metricsCollector, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public HealthController(MetricsCollector metricsCollector, SqliteJobStore jobStore) {
         this.metricsCollector = metricsCollector;
+        this.jobStore = jobStore;
     }
 
     /**
@@ -40,6 +48,12 @@ public class HealthController {
         Map<String, Object> toolsMap = new LinkedHashMap<>();
         allMetrics.forEach((toolName, metrics) -> toolsMap.put(toolName, metrics.toMap()));
         response.put("tools", toolsMap);
+        if (jobStore != null) {
+            response.put("deployment", "single-instance-sqlite");
+            response.put("active_service", jobStore.isOwner());
+            response.put("queue_depth", jobStore.queueDepth());
+            response.put("queue_capacity", jobStore.queueCapacity());
+        }
 
         return ResponseEntity.ok(response);
     }
