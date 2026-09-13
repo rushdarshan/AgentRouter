@@ -157,6 +157,16 @@ substituted for RooFit. A proven-dead SQLite owner may be replaced only after
 the operating system proves its recorded PID is gone; heartbeat age alone never
 permits takeover.
 
+## Upgrades enough — five gates
+
+| Gate | Command | Honest result |
+|------|---------|---------------|
+| Reproducible | `./repro.sh scientific-workflow-reliability-v1` → `artifacts/.../<run-id>/`; `repro.sh --verify <run-id>` read-only | `UNAVAILABLE` when Docker/Guard absent |
+| Correct under faults | `mvn -pl AgentRouter -am test -Dtest=ClaimContentionTest,ExpiryZeroExecTest` (real service + SQLite path, not helpers) | offline helper-only would FAIL gate |
+| Auditable | `manifest.json` + `events.jsonl` + `final-state.json` + `frozen-input.json` (+ `report.txt`) per run, headlined numbers resolve to raw files + protocol | inventory/`*.sha256` scopes declared |
+| Explainable | `docs/plans/2026-09-14-001-feat-upgrades-enough-gates-plan.md` U1-U4 + `SqliteJobStore.claim` `BEGIN IMMEDIATE` design | diagnose via `events.jsonl`/`final-state.json` |
+| Honestly presented | tiers `PASS` (only PASS satisfies) / `UNAVAILABLE` / `EXPERIMENTAL` in this section | next run remains `NOT_RUN` until provisioned |
+
 ## Verification status
 
 The acceptance matrix is deliberately `NOT_RUN` for tests not executed in the
