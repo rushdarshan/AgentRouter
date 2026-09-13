@@ -1,0 +1,1 @@
+{"profile":"sci-c14n-v1","note":"TypeScript-side equality is verified when the Guard importer lands.","vectors":[{"name":"roofit-effective-seed7","input":{"workflow":"roofit","parameters":{"seed":7,"events":1000}},"canonical":"{\"parameters\":{\"events\":1000,\"seed\":7},\"workflow\":\"roofit\"}"}]}

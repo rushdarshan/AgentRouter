@@ -58,7 +58,10 @@ class RouterControllerTest {
     void testHealth() throws Exception {
         mockMvc.perform(get("/health"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("healthy"));
+                .andExpect(jsonPath("$.status").value("healthy"))
+                .andExpect(jsonPath("$.active_service").value(true))
+                .andExpect(jsonPath("$.queue_depth").isNumber())
+                .andExpect(jsonPath("$.queue_capacity").value(4));
     }
 
     @Test
