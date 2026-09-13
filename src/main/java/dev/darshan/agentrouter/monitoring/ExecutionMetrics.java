@@ -15,7 +15,11 @@ public class ExecutionMetrics {
     private Instant timestamp;
 
     public ExecutionMetrics() {
-        this.timestamp = Instant.now();
+        this(Clock.system());
+    }
+
+    public ExecutionMetrics(Clock clock) {
+        this.timestamp = clock.wallTime();
     }
 
     public String getToolName() {

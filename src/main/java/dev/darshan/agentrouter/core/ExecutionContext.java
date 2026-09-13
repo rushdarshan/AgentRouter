@@ -3,6 +3,7 @@ package dev.darshan.agentrouter.core;
 import dev.darshan.agentrouter.monitoring.ExecutionMetrics;
 import dev.darshan.agentrouter.tools.Tool;
 import dev.darshan.agentrouter.tools.ToolResult;
+import dev.darshan.agentrouter.monitoring.Clock;
 
 import java.util.Collections;
 import java.util.Map;
@@ -43,6 +44,7 @@ public class ExecutionContext {
 
     // --- Metrics ---
     private ExecutionMetrics metrics;
+    private boolean attemptRecorded;
 
     public ExecutionContext(String userRequest) {
         this(userRequest, Collections.emptyMap());
@@ -51,7 +53,7 @@ public class ExecutionContext {
     public ExecutionContext(String userRequest, Map<String, Object> requestMetadata) {
         this.userRequest = userRequest;
         this.requestMetadata = requestMetadata != null ? requestMetadata : Collections.emptyMap();
-        this.metrics = new ExecutionMetrics();
+        this.metrics = new ExecutionMetrics(Clock.system());
     }
 
     // --- Builder methods for state transitions ---
@@ -137,5 +139,13 @@ public class ExecutionContext {
 
     public void setMetrics(ExecutionMetrics metrics) {
         this.metrics = metrics;
+    }
+
+    public boolean isAttemptRecorded() {
+        return attemptRecorded;
+    }
+
+    public void markAttemptRecorded() {
+        this.attemptRecorded = true;
     }
 }

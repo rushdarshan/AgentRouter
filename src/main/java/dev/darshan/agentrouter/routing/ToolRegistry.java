@@ -33,7 +33,31 @@ public class ToolRegistry {
      * Register a tool in the registry.
      * Automatically indexes by name and capability.
      */
-    public void register(Tool tool) {
+    public synchronized void register(Tool tool) {
+        Objects.requireNonNull(tool, "tool");
+        if (toolsByName.containsKey(tool.getName())) {
+            throw new IllegalArgumentException("Tool name already registered");
+        }
+        if (toolsByCapability.containsKey(tool.getCapability())) {
+            throw new IllegalArgumentException("Tool capability already registered");
+        }
+        toolsByName.put(tool.getName(), tool);
+        toolsByCapability.put(tool.getCapability(), tool);
+    }
+
+    /**
+     * Explicit replacement is separate from registration so accidental
+     * overwrites cannot change routing behavior silently.
+     */
+    public synchronized void replace(Tool tool) {
+        Objects.requireNonNull(tool, "tool");
+        Tool oldByName = toolsByName.get(tool.getName());
+        Tool oldByCapability = toolsByCapability.get(tool.getCapability());
+        if (oldByName != null && oldByCapability != oldByName) {
+            throw new IllegalArgumentException("Tool name and capability bindings conflict");
+        }
+        if (oldByName != null) toolsByCapability.remove(oldByName.getCapability());
+        if (oldByCapability != null) toolsByName.remove(oldByCapability.getName());
         toolsByName.put(tool.getName(), tool);
         toolsByCapability.put(tool.getCapability(), tool);
     }

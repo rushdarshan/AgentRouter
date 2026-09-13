@@ -1,7 +1,7 @@
 package dev.darshan.agentrouter.monitoring;
 
-import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Per-tool metrics snapshot.
@@ -9,25 +9,52 @@ import java.util.*;
  */
 public class ToolMetrics {
 
-    private long callCount;
-    private long errorCount;
-    private CircuitState circuitState;
-    private final List<Long> latencies;
+    private static final int WINDOW_SIZE = 1024;
+    private final AtomicLong callCount = new AtomicLong();
+    private final AtomicLong errorCount = new AtomicLong();
+    private final AtomicLong rejectedCount = new AtomicLong();
+    private volatile CircuitState circuitState;
+    private final Deque<Long> latencies = new ArrayDeque<>();
 
     public ToolMetrics() {
-        this.callCount = 0;
-        this.errorCount = 0;
         this.circuitState = CircuitState.CLOSED;
-        this.latencies = new ArrayList<>();
     }
 
     public void recordCall(long latencyMs) {
-        callCount++;
-        latencies.add(latencyMs);
+        recordCall(latencyMs, "SUCCESS");
+    }
+
+    public void recordCall(long latencyMs, String outcome) {
+        recordAttempt(outcome, latencyMs);
+    }
+
+    /**
+     * Records one genuine outbound attempt. A null duration means that no
+     * timing sample exists; it is never converted into a fabricated zero.
+     */
+    public void recordAttempt(String outcome, Long latencyMs) {
+        callCount.incrementAndGet();
+        if (outcome != null && !"SUCCESS".equalsIgnoreCase(outcome)) {
+            errorCount.incrementAndGet();
+        }
+        if (latencyMs != null && latencyMs >= 0) {
+            synchronized (latencies) {
+                if (latencies.size() == WINDOW_SIZE) latencies.removeFirst();
+                latencies.addLast(latencyMs);
+            }
+        }
     }
 
     public void recordError() {
-        errorCount++;
+        errorCount.incrementAndGet();
+    }
+
+    /**
+     * Pre-execution circuit rejection: never an attempt, so call/error counts
+     * are untouched. Tracked separately for saturation forensics.
+     */
+    public void recordRejection() {
+        rejectedCount.incrementAndGet();
     }
 
     public void setCircuitState(CircuitState state) {
@@ -35,15 +62,19 @@ public class ToolMetrics {
     }
 
     public long getCallCount() {
-        return callCount;
+        return callCount.get();
     }
 
     public long getErrorCount() {
-        return errorCount;
+        return errorCount.get();
+    }
+
+    public long getRejectedCount() {
+        return rejectedCount.get();
     }
 
     public double getErrorRate() {
-        return callCount == 0 ? 0.0 : (double) errorCount / callCount;
+        return callCount.get() == 0 ? 0.0 : (double) errorCount.get() / callCount.get();
     }
 
     public CircuitState getCircuitState() {
@@ -61,9 +92,11 @@ public class ToolMetrics {
     }
 
     private double getPercentile(int percentile) {
-        if (latencies.isEmpty()) return 0.0;
-
-        List<Long> sorted = new ArrayList<>(latencies);
+        List<Long> sorted;
+        synchronized (latencies) {
+            if (latencies.isEmpty()) return 0.0;
+            sorted = new ArrayList<>(latencies);
+        }
         Collections.sort(sorted);
 
         int index = (int) Math.ceil(percentile / 100.0 * sorted.size()) - 1;
@@ -78,7 +111,9 @@ public class ToolMetrics {
         map.put("call_count", callCount);
         map.put("p50_latency_ms", getP50Latency());
         map.put("p99_latency_ms", getP99Latency());
+        map.put("p99_latency_window", true);
         map.put("error_count", errorCount);
+        map.put("rejected_count", rejectedCount);
         map.put("error_rate", Math.round(getErrorRate() * 1000.0) / 1000.0);
         map.put("circuit_state", circuitState.name());
         return map;

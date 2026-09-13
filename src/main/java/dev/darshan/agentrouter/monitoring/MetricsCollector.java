@@ -28,16 +28,29 @@ public class MetricsCollector {
      * Record a successful tool call with its latency.
      */
     public void recordLatency(String toolName, long latencyMs) {
-        getOrCreate(toolName).recordCall(latencyMs);
+        recordCall(toolName, latencyMs, "SUCCESS");
     }
 
     /**
      * Record a tool execution error.
      */
     public void recordError(String toolName, String errorType) {
-        ToolMetrics metrics = getOrCreate(toolName);
-        metrics.recordCall(0);
-        metrics.recordError();
+        getOrCreate(toolName).recordError();
+    }
+
+    /** Record exactly one attempt, including its outcome and genuine duration. */
+    public void recordCall(String toolName, long latencyMs, String outcome) {
+        getOrCreate(toolName).recordCall(latencyMs, outcome);
+    }
+
+    /** Record one attempt with an optional genuine duration sample. */
+    public void recordAttempt(String toolName, String outcome, Long latencyMs) {
+        getOrCreate(toolName).recordAttempt(outcome, latencyMs);
+    }
+
+    /** Pre-execution circuit rejection: counted separately, never an attempt. */
+    public void recordRejection(String toolName) {
+        getOrCreate(toolName).recordRejection();
     }
 
     /**
