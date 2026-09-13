@@ -1,0 +1,10 @@
+{
+  "recipe": "reanahub/reana-demo-root6-roofit",
+  "commit": "a3b228b-placeholder-pin-before-verify",
+  "imageDigest": "sha256:placeholder-run-reana-demo-root6-roofit-digest",
+  "scripts": ["run.sh", "fit.py"],
+  "params": {"nevents": 1000},
+  "recipeBytesSha256": "placeholder-separate-byte-hash",
+  "normalizedInvocationHash": "sci-c14n-v1-placeholder",
+  "note": "pins unverified until inspected and executed — task 2.1"
+}
