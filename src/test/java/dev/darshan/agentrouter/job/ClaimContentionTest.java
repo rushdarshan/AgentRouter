@@ -20,13 +20,13 @@ class ClaimContentionTest {
         store.accept("alice", "k-" + opId, req, "rid-" + opId, "{}", "hash-" + opId);
 
         // hold write tx on second raw connection to force STORE_BUSY on BEGIN IMMEDIATE
-        Connection contender = DriverManager.getConnection(url);
-        try (Statement s = contender.createStatement()) { s.execute("PRAGMA busy_timeout = 0"); }
-        contender.createStatement().execute("BEGIN IMMEDIATE");
-        SqliteJobStore.ClaimResult busy = store.claim("alice", opId);
-        assertEquals(SqliteJobStore.ClaimResult.STORE_BUSY, busy, "second claimant should see STORE_BUSY");
-        contender.createStatement().execute("ROLLBACK");
-        contender.close();
+        try (Connection contender = DriverManager.getConnection(url)) {
+            try (Statement s = contender.createStatement()) { s.execute("PRAGMA busy_timeout = 0"); }
+            contender.createStatement().execute("BEGIN IMMEDIATE");
+            SqliteJobStore.ClaimResult busy = store.claim("alice", opId);
+            assertEquals(SqliteJobStore.ClaimResult.STORE_BUSY, busy, "second claimant should see STORE_BUSY");
+            contender.createStatement().execute("ROLLBACK");
+        }
 
         // now claim succeeds
         SqliteJobStore.ClaimResult claimed = store.claim("alice", opId);
