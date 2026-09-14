@@ -54,16 +54,19 @@ class OperatingEnvelopeTest {
                 return null;
             }));
         }
-        for (Future<?> f : futures) f.get(120, TimeUnit.SECONDS);
-        pool.shutdownNow();
-        // duplicate + contention probes on one op: second submit same key is dedup, second dispatch is ALREADY_CLAIMED
-        String dup = UUID.randomUUID().toString();
-        JobRequest dreq = new JobRequest(dup, "roofit", Map.of("seed", 1L, "events", 10L), null);
-        assertEquals(202, svc.submit("operator", "dup-key", dreq).status());
-        assertEquals(200, svc.submit("operator", "dup-key", dreq).status());
-        svc.dispatch("operator", dup);
-        assertEquals(SqliteJobStore.ClaimResult.ALREADY_CLAIMED, store.claim("operator", dup));
-        store.close();
+        try {
+            for (Future<?> f : futures) f.get(120, TimeUnit.SECONDS);
+            // duplicate + contention probes on one op: second submit same key is dedup, second dispatch is ALREADY_CLAIMED
+            String dup = UUID.randomUUID().toString();
+            JobRequest dreq = new JobRequest(dup, "roofit", Map.of("seed", 1L, "events", 10L), null);
+            assertEquals(202, svc.submit("operator", "dup-key", dreq).status());
+            assertEquals(200, svc.submit("operator", "dup-key", dreq).status());
+            svc.dispatch("operator", dup);
+            assertEquals(SqliteJobStore.ClaimResult.ALREADY_CLAIMED, store.claim("operator", dup));
+        } finally {
+            pool.shutdownNow();
+            store.close();
+        }
         return new LevelResult(clients, p50(submitLat), p95(submitLat), p50(e2eLat),
                 (long) clients * opsPerClient, 0, 0, 1);
     }
