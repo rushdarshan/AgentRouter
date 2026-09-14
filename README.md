@@ -1,6 +1,6 @@
 # AgentRouter
 
-AgentRouter is a Java agent tool orchestration framework that routes user intents to appropriate tools, executes them with fault tolerance, and reports results with comprehensive observability. The architecture directly mirrors Salesforce Agentforce's orchestration model.
+AgentRouter is a Java agent tool orchestration framework that routes user intents to appropriate tools, executes them with fault tolerance, and reports results with comprehensive observability. It implements its own deterministic 4-node pipeline plus a durable `/jobs` scientific-workflow path backed by a single-instance SQLite store with claim fencing — a modest single-machine design with explicit limits (see Operating envelope), not an enterprise-scale platform.
 
 ## Core Architecture
 
@@ -167,11 +167,15 @@ permits takeover.
 | Explainable | `docs/plans/2026-09-14-001-feat-upgrades-enough-gates-plan.md` U1-U4 + `SqliteJobStore.claim` `BEGIN IMMEDIATE` design | diagnose via `events.jsonl`/`final-state.json` |
 | Honestly presented | tiers `PASS` (only PASS satisfies) / `UNAVAILABLE` / `EXPERIMENTAL` in this section | next run remains `NOT_RUN` until provisioned |
 
-## Verification status
+## Verification status (dated 2026-09-15)
 
-The acceptance matrix is deliberately `NOT_RUN` for tests not executed in the
-current environment; it does not claim CI results. The available JDK was used
-for direct source/test compilation and focused JUnit runs. `mvn verify` could
-not be run because Maven is not installed, so no new coverage percentage is
-claimed. Docker and the external Guard importer are unavailable here, and the
-real RooFit tier remains `UNAVAILABLE`.
+Verified commit: `2a08636` on `main` (merge of `feat/e2e-demo`; CI: `.github/workflows/ci.yml` on GitHub Actions).
+Test/report links: `https://github.com/rushdarshan/AgentRouter/actions` and `https://github.com/rushdarshan/AgentRouter/tree/main/artifacts`.
+
+| Environment | Result |
+|-------------|--------|
+| CI (GitHub Actions, `mvn verify`) | per run badge/logs — only `PASS` satisfies |
+| Local offline (JDK direct compile, focused JUnit) | `ClaimContentionTest`, `ExpiryZeroExecTest` patterns verified; no new coverage % claimed |
+| Docker / external Guard importer / real RooFit tier | `UNAVAILABLE` here (reported, never substituted) |
+
+Operating envelope: `artifacts/operating-envelope/ENVELOPE.md` (deterministic tier harness `OperatingEnvelopeTest` at 1/4/16 clients, 64 gated by machine capacity; Docker tier labeled separately). The acceptance matrix stays `NOT_RUN` for unexecuted rows; `UNAVAILABLE` for absent provisioned tiers. Tiers: `PASS` (only `PASS` satisfies) / `UNAVAILABLE` / `EXPERIMENTAL`.
