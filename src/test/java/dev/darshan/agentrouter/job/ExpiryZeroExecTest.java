@@ -21,7 +21,7 @@ class ExpiryZeroExecTest {
         store.accept("alice", "k-" + opId, req, "rid-" + opId, "{}", "hash-" + opId);
         try (var c = java.sql.DriverManager.getConnection(url); var s = c.createStatement()) {
             s.execute("PRAGMA busy_timeout = 0");
-            s.executeUpdate("UPDATE operations SET operation_state = 'COMPLETED' WHERE operation_id='" + opId + "'");
+            s.executeUpdate("UPDATE operations SET state = 'COMPLETED' WHERE operation_id='" + opId + "'");
         }
         SqliteJobStore.ClaimResult r = store.claim("alice", opId);
         assertEquals(SqliteJobStore.ClaimResult.INELIGIBLE, r, "expired op should be INELIGIBLE");

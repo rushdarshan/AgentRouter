@@ -1,0 +1,84 @@
+{
+  "command": "node scripts/envelope/run-bench.mjs",
+  "env": {
+    "commit": "5ad35148ce9653e76d152b7b8be41d0f19a918c3",
+    "java": "java version \"23.0.2\" 2025-01-21",
+    "os": "win32 10.0.26200",
+    "arch": "x64",
+    "cpus": 24
+  },
+  "levels": [
+    {
+      "clients": 1,
+      "n": 24,
+      "reps": 3,
+      "workflowQueue": 128,
+      "submitP50": 1,
+      "submitP50min": 1,
+      "submitP50max": 2,
+      "statusP50": 0,
+      "dispatchP50": 3,
+      "e2eP50": 6,
+      "accepted": 24,
+      "rejected": 0,
+      "busy": 0,
+      "alreadyClaimed": 3
+    },
+    {
+      "clients": 4,
+      "n": 48,
+      "reps": 3,
+      "workflowQueue": 128,
+      "submitP50": 4,
+      "submitP50min": 3,
+      "submitP50max": 4,
+      "statusP50": 1,
+      "dispatchP50": 11,
+      "e2eP50": 18,
+      "accepted": 48,
+      "rejected": 0,
+      "busy": 0,
+      "alreadyClaimed": 3
+    },
+    {
+      "clients": 16,
+      "n": 96,
+      "reps": 3,
+      "workflowQueue": 128,
+      "submitP50": 15,
+      "submitP50min": 13,
+      "submitP50max": 18,
+      "statusP50": 12,
+      "dispatchP50": 49,
+      "e2eP50": 76,
+      "accepted": 96,
+      "rejected": 0,
+      "busy": 0,
+      "alreadyClaimed": 3
+    }
+  ],
+  "skipped": [
+    {
+      "clients": 64,
+      "reason": "capacity gate: rerun with --full on provisioned hardware"
+    }
+  ],
+  "saturationProbe": {
+    "workflowQueue": 4,
+    "submitted": 6,
+    "accepted": 4,
+    "rejected429": 2
+  },
+  "contentionProbe": {
+    "storeBusy": true,
+    "claimedAfterRollback": true
+  },
+  "expiryProbe": {
+    "ineligible": true,
+    "executions": 0
+  },
+  "sqlite": "3.45.3",
+  "journalMode": "delete",
+  "synchronous": "2",
+  "busyTimeout": 0
+}

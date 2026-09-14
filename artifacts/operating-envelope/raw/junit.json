@@ -1,0 +1,11 @@
+{
+  "command": "node scripts/envelope/run-junit.mjs",
+  "classes": [
+    "dev.darshan.agentrouter.job.ClaimContentionTest",
+    "dev.darshan.agentrouter.job.ExpiryZeroExecTest",
+    "dev.darshan.agentrouter.job.OperatingEnvelopeTest"
+  ],
+  "tests": [],
+  "passed": 4,
+  "failed": 0
+}
