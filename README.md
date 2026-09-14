@@ -83,7 +83,7 @@ mvn clean verify
 mvn spring-boot:run
 ```
 
-## Resume Highlights
+## Highlights
 
 *   **Orchestration Architecture**: Designed a deterministic, LangGraph-inspired 4-node Java state graph for agent tool routing, mirroring Salesforce Agentforce's orchestration model and enabling observable execution state.
 *   **Fault Tolerance**: Implemented a configurable Circuit Breaker pattern preventing cascading failures across distributed agent tools, tracking state transitions (CLOSED/OPEN/HALF_OPEN).
